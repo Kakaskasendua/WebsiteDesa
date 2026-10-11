@@ -138,5 +138,32 @@ export async function initDb() {
     await sql`SELECT setval(pg_get_serial_sequence('aparatur', 'id'), 61, true)`;
   }
 
+  // ── Kepala Lingkungan ──────────────────────────────────────────────────
+  await sql`
+    CREATE TABLE IF NOT EXISTS kepala_lingkungan (
+      id SERIAL PRIMARY KEY,
+      nomor_lingkungan INT UNIQUE NOT NULL,
+      nama VARCHAR(100) NOT NULL DEFAULT '',
+      keterangan VARCHAR(200) DEFAULT '',
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      updated_at TIMESTAMPTZ DEFAULT NOW()
+    )
+  `;
+
+  // Migrasi kolom keterangan untuk database yang sudah ada
+  await sql`ALTER TABLE kepala_lingkungan ADD COLUMN IF NOT EXISTS keterangan VARCHAR(200) DEFAULT ''`;
+
+  // Seed data lingkungan 1-13 jika belum ada
+  const klCount = await sql`SELECT COUNT(*) FROM kepala_lingkungan`;
+  if (parseInt(klCount[0].count) === 0) {
+    for (let i = 1; i <= 13; i++) {
+      await sql`
+        INSERT INTO kepala_lingkungan (nomor_lingkungan, nama)
+        VALUES (${i}, '')
+        ON CONFLICT (nomor_lingkungan) DO NOTHING
+      `;
+    }
+  }
+
   return true;
 }

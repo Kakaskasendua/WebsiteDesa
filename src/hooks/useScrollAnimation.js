@@ -7,7 +7,6 @@ export default function useScrollAnimation() {
 
   useEffect(() => {
     const container = ref.current || document;
-    const elements = container.querySelectorAll('.fade-up, .fade-left, .fade-right');
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -21,9 +20,23 @@ export default function useScrollAnimation() {
       { rootMargin: '0px 0px -50px 0px', threshold: 0.1 }
     );
 
-    elements.forEach((el) => observer.observe(el));
+    const observeNewElements = () => {
+      const elements = container.querySelectorAll('.fade-up:not(.visible), .fade-left:not(.visible), .fade-right:not(.visible)');
+      elements.forEach((el) => observer.observe(el));
+    };
 
-    return () => observer.disconnect();
+    observeNewElements();
+
+    const mutationObserver = new MutationObserver(() => {
+      observeNewElements();
+    });
+
+    mutationObserver.observe(container, { childList: true, subtree: true });
+
+    return () => {
+      observer.disconnect();
+      mutationObserver.disconnect();
+    };
   }, []);
 
   return ref;

@@ -23,6 +23,7 @@ import {
   Link as LinkIcon,
   Paperclip,
   Users,
+  MapPin,
 } from 'lucide-react';
 
 const statusColors = {
@@ -81,6 +82,13 @@ export default function AdminPage() {
   const [formA, setFormA] = useState({ id: null, jabatan: '', nama: '', nip: '' });
   const [savingA, setSavingA] = useState(false);
 
+  // Kepala Lingkungan state
+  const [klList, setKlList] = useState([]);
+  const [loadingKL, setLoadingKL] = useState(true);
+  const [showFormKL, setShowFormKL] = useState(false);
+  const [formKL, setFormKL] = useState({ id: null, nomor_lingkungan: '', nama: '', keterangan: '' });
+  const [savingKL, setSavingKL] = useState(false);
+
   // Toast
   const [toast, setToast] = useState(null);
 
@@ -133,13 +141,26 @@ export default function AdminPage() {
     setLoadingA(false);
   }, []);
 
+  const fetchKL = useCallback(async () => {
+    setLoadingKL(true);
+    try {
+      const res = await fetch('/api/kepala-lingkungan');
+      const data = await res.json();
+      setKlList(Array.isArray(data) ? data : []);
+    } catch {
+      setKlList([]);
+    }
+    setLoadingKL(false);
+  }, []);
+
   useEffect(() => {
     if (user) {
       fetchPengumuman();
       fetchGaleri();
       fetchAparatur();
+      fetchKL();
     }
-  }, [user, fetchPengumuman, fetchGaleri, fetchAparatur]);
+  }, [user, fetchPengumuman, fetchGaleri, fetchAparatur, fetchKL]);
 
   const handleFileUpload = async (e, setForm, field, setFileNameField = null) => {
     const file = e.target.files[0];
@@ -312,6 +333,31 @@ export default function AdminPage() {
     setSavingA(false);
   };
 
+  // Kepala Lingkungan CRUD (Update Only)
+  const handleEditKL = (item) => {
+    setFormKL({ id: item.id, nomor_lingkungan: item.nomor_lingkungan, nama: item.nama || '', keterangan: item.keterangan || '' });
+    setShowFormKL(true);
+  };
+
+  const handleSaveKL = async (e) => {
+    e.preventDefault();
+    setSavingKL(true);
+    try {
+      const res = await fetch(`/api/kepala-lingkungan/${formKL.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nama: formKL.nama, keterangan: formKL.keterangan }),
+      });
+      if (!res.ok) throw new Error();
+      showToast('success', 'Data kepala lingkungan diperbarui');
+      setShowFormKL(false);
+      fetchKL();
+    } catch {
+      showToast('error', 'Gagal menyimpan data kepala lingkungan');
+    }
+    setSavingKL(false);
+  };
+
 
   if (authLoading || !user) {
     return (
@@ -417,6 +463,17 @@ export default function AdminPage() {
           >
             <Users className="w-4 h-4" />
             Struktur Desa
+          </button>
+          <button
+            onClick={() => setTab('kepala-lingkungan')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
+              tab === 'kepala-lingkungan'
+                ? 'bg-sage-500 text-white'
+                : 'text-sage-600 hover:bg-sage-50'
+            }`}
+          >
+            <MapPin className="w-4 h-4" />
+            Kepala Lingkungan
           </button>
         </div>
 
@@ -908,6 +965,71 @@ export default function AdminPage() {
             )}
           </div>
         )}
+
+        {/* ─── KEPALA LINGKUNGAN TAB ─── */}
+        {tab === 'kepala-lingkungan' && (
+          <div className="animate-in bg-white rounded-2xl shadow-sm border border-sage-100 overflow-hidden">
+            <div className="p-6 border-b border-sage-100 flex items-center justify-between bg-sage-50/50">
+              <h2 className="font-[family-name:var(--font-heading)] text-xl font-bold text-sage-900 flex items-center gap-2">
+                <MapPin className="w-5 h-5 text-sage-500" />
+                Kepala Lingkungan (1-13)
+              </h2>
+            </div>
+            
+            {loadingKL ? (
+              <div className="flex justify-center p-12">
+                <Loader2 className="w-8 h-8 text-sage-400 animate-spin" />
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-sage-50/80 text-sage-600 text-xs uppercase tracking-wider border-b border-sage-100">
+                      <th className="px-6 py-4 font-semibold w-20">No.</th>
+                      <th className="px-6 py-4 font-semibold">Lingkungan</th>
+                      <th className="px-6 py-4 font-semibold">Nama Kepala Lingkungan</th>
+                      <th className="px-6 py-4 font-semibold">Keterangan</th>
+                      <th className="px-6 py-4 font-semibold w-24 text-center">Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-sage-100/50">
+                    {klList.map((item) => (
+                      <tr key={item.id} className="hover:bg-sage-50/30 transition-colors">
+                        <td className="px-6 py-4">
+                          <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-sage-100 text-sage-700 font-bold text-sm">
+                            {item.nomor_lingkungan}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <p className="font-semibold text-sage-900">Lingkungan {item.nomor_lingkungan}</p>
+                        </td>
+                        <td className="px-6 py-4">
+                          {item.nama ? (
+                            <p className="text-sm text-sage-600">{item.nama}</p>
+                          ) : (
+                            <p className="text-sm text-sage-400 italic">Belum diisi</p>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-sage-500">
+                          {item.keterangan || '-'}
+                        </td>
+                        <td className="px-6 py-4 text-center">
+                          <button
+                            onClick={() => handleEditKL(item)}
+                            className="p-2 text-sage-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+                            title="Edit"
+                          >
+                            <Edit3 className="w-4 h-4" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* MODAL EDIT APARATUR */}
@@ -965,6 +1087,73 @@ export default function AdminPage() {
                   disabled={savingA}
                 >
                   {savingA ? (
+                    <Loader2 className="w-4 h-4 animate-spin text-white" />
+                  ) : (
+                    'Simpan'
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL EDIT KEPALA LINGKUNGAN */}
+      {showFormKL && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl relative animate-in fade-in zoom-in-95 duration-200">
+            <button
+              onClick={() => setShowFormKL(false)}
+              className="absolute top-4 right-4 text-sage-400 hover:text-sage-600 transition-colors cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <h3 className="font-[family-name:var(--font-heading)] text-xl font-bold text-sage-900 mb-1">
+              Edit Kepala Lingkungan {formKL.nomor_lingkungan}
+            </h3>
+            <p className="text-sage-500 text-sm mb-6">Lingkungan {formKL.nomor_lingkungan}</p>
+            
+            <form onSubmit={handleSaveKL} className="space-y-4">
+              <div>
+                <label className="block text-sage-700 text-sm font-medium mb-1.5">
+                  Nama Kepala Lingkungan
+                </label>
+                <input
+                  type="text"
+                  value={formKL.nama}
+                  onChange={(e) => setFormKL({ ...formKL, nama: e.target.value })}
+                  className="form-input"
+                  placeholder="Masukkan nama kepala lingkungan"
+                />
+              </div>
+              <div>
+                <label className="block text-sage-700 text-sm font-medium mb-1.5">
+                  Keterangan (Opsional)
+                </label>
+                <input
+                  type="text"
+                  value={formKL.keterangan}
+                  onChange={(e) => setFormKL({ ...formKL, keterangan: e.target.value })}
+                  className="form-input"
+                  placeholder="Contoh: RT/RW, alamat, dll"
+                />
+              </div>
+              
+              <div className="pt-4 flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowFormKL(false)}
+                  className="btn-secondary px-5 py-2.5 text-sm cursor-pointer"
+                  disabled={savingKL}
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  className="btn-primary px-5 py-2.5 text-sm flex items-center justify-center cursor-pointer min-w-[100px]"
+                  disabled={savingKL}
+                >
+                  {savingKL ? (
                     <Loader2 className="w-4 h-4 animate-spin text-white" />
                   ) : (
                     'Simpan'

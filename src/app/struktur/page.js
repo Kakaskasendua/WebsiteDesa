@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import useScrollAnimation from '@/hooks/useScrollAnimation';
-import { Users, User, ArrowDown, Loader2 } from 'lucide-react';
+import { Users, User, ArrowDown, Loader2, MapPin } from 'lucide-react';
 
 function StaffCard({ jabatan, nama, nip, isMain = false, isKepala = false }) {
   return (
@@ -27,6 +27,22 @@ function StaffCard({ jabatan, nama, nip, isMain = false, isKepala = false }) {
           NIP. {nip}
         </span>
       )}
+    </div>
+  );
+}
+
+function KepalaLingkunganCard({ nomor_lingkungan, nama }) {
+  return (
+    <div className="bg-white rounded-2xl p-5 border border-sage-100 shadow-sm flex flex-col items-center text-center transition-transform hover:-translate-y-1 hover:shadow-md hover:border-sage-200">
+      <div className="w-12 h-12 rounded-full bg-sage-50 mb-3 border-2 border-sage-200 flex items-center justify-center shrink-0">
+        <span className="font-bold text-sage-600 text-base">{nomor_lingkungan}</span>
+      </div>
+      <p className="text-sage-400 text-[10px] font-semibold uppercase tracking-widest mb-1">
+        Lingkungan {nomor_lingkungan}
+      </p>
+      <h3 className="font-[family-name:var(--font-heading)] font-bold text-sage-900 text-sm leading-tight min-h-[2.5rem] flex items-center justify-center">
+        {nama ? nama : <span className="text-sage-400 italic font-normal text-xs">Belum diisi</span>}
+      </h3>
     </div>
   );
 }
@@ -80,6 +96,8 @@ export default function StrukturPage() {
   const scrollRef = useScrollAnimation();
   const [data, setData] = useState({ lurah: null, sekretariat: [], divisiKasie: {} });
   const [loading, setLoading] = useState(true);
+  const [klList, setKlList] = useState([]);
+  const [loadingKL, setLoadingKL] = useState(true);
 
   useEffect(() => {
     fetch('/api/aparatur')
@@ -103,6 +121,12 @@ export default function StrukturPage() {
       })
       .catch((err) => console.error(err))
       .finally(() => setLoading(false));
+
+    fetch('/api/kepala-lingkungan')
+      .then((res) => res.json())
+      .then((kl) => setKlList(Array.isArray(kl) ? kl : []))
+      .catch(() => setKlList([]))
+      .finally(() => setLoadingKL(false));
   }, []);
 
   return (
@@ -174,6 +198,39 @@ export default function StrukturPage() {
                 </div>
               ))}
 
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* KEPALA LINGKUNGAN */}
+      <section className="py-16 md:py-20 bg-white">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-10 fade-up">
+            <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-sage-50 border border-sage-200 mb-4">
+              <MapPin className="w-6 h-6 text-sage-500" />
+            </div>
+            <span className="block text-sage-400 font-semibold text-xs uppercase tracking-widest mb-2">
+              Wilayah
+            </span>
+            <h2 className="font-[family-name:var(--font-heading)] text-3xl md:text-4xl font-bold text-sage-900 mb-3">
+              Kepala Lingkungan
+            </h2>
+            <div className="section-divider mx-auto mb-4" />
+            <p className="text-sage-500 text-sm max-w-md mx-auto">
+              Kelurahan Kakaskasen Dua terdiri dari 13 lingkungan yang masing-masing dipimpin oleh seorang Kepala Lingkungan.
+            </p>
+          </div>
+
+          {loadingKL ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="w-8 h-8 text-sage-400 animate-spin" />
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+              {klList.map((item) => (
+                <KepalaLingkunganCard key={item.id} {...item} />
+              ))}
             </div>
           )}
         </div>
