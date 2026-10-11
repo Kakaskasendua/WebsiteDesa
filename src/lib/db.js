@@ -83,38 +83,59 @@ export async function initDb() {
   await sql`
     CREATE TABLE IF NOT EXISTS aparatur (
       id SERIAL PRIMARY KEY,
-      kategori VARCHAR(50) NOT NULL, -- lurah, sekretaris, seksi, lingkungan
+      kategori VARCHAR(50) NOT NULL, -- lurah, sekretariat, kasie
       jabatan VARCHAR(100) NOT NULL,
       nama VARCHAR(100) NOT NULL,
       nip VARCHAR(50),
-      urutan INT NOT NULL
+      urutan INT NOT NULL,
+      jabatan_divisi VARCHAR(100),
+      is_kepala BOOLEAN NOT NULL DEFAULT FALSE
     )
   `;
 
-  // Seed default aparatur data if empty
+  // Migrasi kolom struktur untuk database Neon yang sudah dibuat sebelumnya.
+  await sql`ALTER TABLE aparatur ADD COLUMN IF NOT EXISTS jabatan_divisi VARCHAR(100)`;
+  await sql`ALTER TABLE aparatur ADD COLUMN IF NOT EXISTS is_kepala BOOLEAN NOT NULL DEFAULT FALSE`;
+
+  // Seed/sinkronisasi data struktur awal. Setelah 15 ID target tersedia,
+  // perubahan nama melalui halaman admin tidak ditimpa lagi.
+  const targetIds = [47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61];
+  const targetCount = await sql`
+    SELECT COUNT(*) FROM aparatur
+    WHERE id = ANY(${targetIds}::int[])
+  `;
   const aparaturCount = await sql`SELECT COUNT(*) FROM aparatur`;
-  if (parseInt(aparaturCount[0].count) === 0) {
+
+  if (parseInt(targetCount[0].count) !== targetIds.length || parseInt(aparaturCount[0].count) !== targetIds.length) {
     const defaultData = [
-      { kategori: 'lurah', jabatan: 'Lurah Kakaskasen Dua', nama: 'Nama Lurah, S.IP', nip: '19801231 200501 1 001', urutan: 1 },
-      { kategori: 'sekretaris', jabatan: 'Sekretaris Kelurahan', nama: 'Nama Sekretaris, S.E.', nip: '19851231 201001 2 002', urutan: 2 },
-      { kategori: 'seksi', jabatan: 'Kasi Pemerintahan & Trantib', nama: 'Nama Kasi Pem', nip: '19901231 201501 1 003', urutan: 3 },
-      { kategori: 'seksi', jabatan: 'Kasi Pembangunan & Kesra', nama: 'Nama Kasi Pembangunan', nip: '19881231 201301 2 004', urutan: 4 },
-      { kategori: 'seksi', jabatan: 'Kasi Pelayanan Umum', nama: 'Nama Kasi Pelayanan', nip: '19921231 201801 2 005', urutan: 5 },
-      ...Array.from({ length: 13 }).map((_, i) => ({
-        kategori: 'lingkungan',
-        jabatan: `Kepala Lingkungan ${i + 1}`,
-        nama: 'Nama Pala',
-        nip: '',
-        urutan: 6 + i
-      }))
+      { id: 1, kategori: 'lurah', jabatan: 'Lurah Kakaskasen Dua', nama: 'FENDY M. MONGDONG', nip: '', urutan: 1, jabatanDivisi: 'Lurah', isKepala: true },
+      { id: 2, kategori: 'sekretariat', jabatan: 'Staf Kesekretariatan', nama: 'MEILANI M. TEROK', nip: '', urutan: 2, jabatanDivisi: 'Kesekretariatan', isKepala: false },
+      { id: 3, kategori: 'sekretariat', jabatan: 'Staf Kesekretariatan', nama: 'ARKELINA HUTRI RUNTULALO', nip: '', urutan: 3, jabatanDivisi: 'Kesekretariatan', isKepala: false },
+      { id: 4, kategori: 'sekretariat', jabatan: 'Staf Kesekretariatan', nama: 'ARKELINA ANGREANI HUTRI RUNTULALO', nip: '', urutan: 4, jabatanDivisi: 'Kesekretariatan', isKepala: false },
+      { id: 5, kategori: 'sekretariat', jabatan: 'Staf Kesekretariatan', nama: 'MEINNY REZKY NOFRIKE RENGKUNG', nip: '', urutan: 5, jabatanDivisi: 'Kesekretariatan', isKepala: false },
+      { id: 6, kategori: 'kasie', jabatan: 'Kasie Pemerintah dan Trantib', nama: 'NOVIE N. LENAK', nip: '', urutan: 6, jabatanDivisi: 'Kasie Pemerintah dan Trantib', isKepala: true },
+      { id: 7, kategori: 'kasie', jabatan: 'Anggota', nama: 'DENNY DECHRI CHARLIS RUNTUWENE', nip: '', urutan: 7, jabatanDivisi: 'Kasie Pemerintah dan Trantib', isKepala: false },
+      { id: 8, kategori: 'kasie', jabatan: 'Anggota', nama: 'ALBERT ODY PITOY', nip: '', urutan: 8, jabatanDivisi: 'Kasie Pemerintah dan Trantib', isKepala: false },
+      { id: 9, kategori: 'kasie', jabatan: 'Kasie Pembangunan dan Keuangan', nama: 'STEVY TUMBELAKA', nip: '', urutan: 9, jabatanDivisi: 'Kasie Pembangunan dan Keuangan', isKepala: true },
+      { id: 10, kategori: 'kasie', jabatan: 'Anggota', nama: 'ALVIJAN A.H TULUS', nip: '', urutan: 10, jabatanDivisi: 'Kasie Pembangunan dan Keuangan', isKepala: false },
+      { id: 11, kategori: 'kasie', jabatan: 'Anggota', nama: 'ROLANDO ROLENS LUMENTA', nip: '', urutan: 11, jabatanDivisi: 'Kasie Pembangunan dan Keuangan', isKepala: false },
+      { id: 12, kategori: 'kasie', jabatan: 'Anggota', nama: 'SATRIA DAVID MANDAGI', nip: '', urutan: 12, jabatanDivisi: 'Kasie Pembangunan dan Keuangan', isKepala: false },
+      { id: 13, kategori: 'kasie', jabatan: 'Kasie Kesejahteraan Rakyat', nama: 'WENLY C. C. PONGAJOW', nip: '', urutan: 13, jabatanDivisi: 'Kasie Kesejahteraan Rakyat', isKepala: true },
+      { id: 14, kategori: 'kasie', jabatan: 'Anggota', nama: 'VERONIKA STEINY PALENDENG', nip: '', urutan: 14, jabatanDivisi: 'Kasie Kesejahteraan Rakyat', isKepala: false },
+      { id: 15, kategori: 'kasie', jabatan: 'Anggota', nama: 'BASILIUS FENLI ANGOW', nip: '', urutan: 15, jabatanDivisi: 'Kasie Kesejahteraan Rakyat', isKepala: false }
     ];
 
+    await sql`DELETE FROM aparatur`;
     for (const item of defaultData) {
       await sql`
-        INSERT INTO aparatur (kategori, jabatan, nama, nip, urutan)
-        VALUES (${item.kategori}, ${item.jabatan}, ${item.nama}, ${item.nip}, ${item.urutan})
+        INSERT INTO aparatur
+          (id, kategori, jabatan, nama, nip, urutan, jabatan_divisi, is_kepala)
+        VALUES
+          (${item.id}, ${item.kategori}, ${item.jabatan}, ${item.nama}, ${item.nip},
+           ${item.urutan}, ${item.jabatanDivisi}, ${item.isKepala})
       `;
     }
+    await sql`SELECT setval(pg_get_serial_sequence('aparatur', 'id'), 61, true)`;
   }
 
   return true;
