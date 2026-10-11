@@ -225,7 +225,10 @@ export default function ProfilPage() {
             Jam Pelayanan
           </h2>
           <p className="text-sage-600 text-sm mb-1">
-            Senin — Jumat: 08.00 — 16.00 WITA
+            Senin — Kamis: 08.00 — 17.00 WITA
+          </p>
+          <p className="text-sage-600 text-sm mb-1">
+            Jumat: 08.00 — 11.30 WITA
           </p>
           <p className="text-sage-500 text-xs">Sabtu — Minggu: Tutup</p>
 

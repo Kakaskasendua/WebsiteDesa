@@ -73,7 +73,10 @@ export default function KontakPage() {
                         Jam Operasional
                       </p>
                       <p className="text-sage-600 text-sm">
-                        Senin — Jumat: 08.00 — 16.00 WITA
+                        Senin — Kamis: 08.00 — 17.00 WITA
+                      </p>
+                      <p className="text-sage-600 text-sm">
+                        Jumat: 08.00 — 11.30 WITA
                       </p>
                       <p className="text-sage-500 text-sm">
                         Sabtu — Minggu: Tutup
