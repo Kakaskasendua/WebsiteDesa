@@ -82,14 +82,6 @@ Buka browser dan akses **`http://localhost:3000`**.
 
 ---
 
-## 🔐 Panduan Admin
-
-Akses login tersedia melalui tombol **"Login"** di sudut kanan atas menu navigasi. 
-
-**Akun Default Pertama Kali:**
-- **Username**: `admin`
-- **Password**: `admin123`
-
 Dari Dashboard Admin, staf kelurahan dapat melakukan fungsi:
 1. **Pengumuman**: Menambah, mengedit, menghapus, serta menyematkan (*pin*) berita penting agar muncul di urutan teratas.
 2. **Galeri**: Memasukkan URL foto dan deskripsi kegiatan ke dalam galeri publik.
