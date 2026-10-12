@@ -34,11 +34,11 @@ export default function Footer() {
           <div>
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 flex items-center justify-center shrink-0">
-                <Image 
-                  src="/logo-tomohon.png" 
-                  alt="Logo Tomohon" 
-                  width={40} 
-                  height={40} 
+                <Image
+                  src="/logo-tomohon.png"
+                  alt="Logo Tomohon"
+                  width={40}
+                  height={40}
                   className="object-contain"
                 />
               </div>
@@ -97,12 +97,12 @@ export default function Footer() {
               </div>
               <div className="flex items-center gap-3">
                 <Phone className="w-4 h-4 text-sage-400 shrink-0" />
-                <p className="text-sage-300/70 text-sm">12345</p>
+                <p className="text-sage-300/70 text-sm">082292394628</p>
               </div>
               <div className="flex items-center gap-3">
                 <Mail className="w-4 h-4 text-sage-400 shrink-0" />
                 <p className="text-sage-300/70 text-sm">
-                  kelurahan.kakaskasendua@tomohon.go.id
+                  kakaskasendua2@gmail.com
                 </p>
               </div>
             </div>

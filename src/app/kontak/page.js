@@ -92,7 +92,7 @@ export default function KontakPage() {
                       <p className="font-medium text-sage-900 text-sm mb-0.5">
                         Telepon
                       </p>
-                      <p className="text-sage-600 text-sm">12345</p>
+                      <p className="text-sage-600 text-sm">082292394628</p>
                     </div>
                   </div>
 
@@ -105,7 +105,7 @@ export default function KontakPage() {
                         Email
                       </p>
                       <p className="text-sage-600 text-sm">
-                        kelurahan.kakaskasendua@tomohon.go.id
+                        kakaskasendua2@gmail.com
                       </p>
                     </div>
                   </div>
