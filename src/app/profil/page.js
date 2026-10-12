@@ -103,7 +103,7 @@ export default function ProfilPage() {
               {/* Narasi Sejarah */}
               <div className="bg-white rounded-2xl p-6 md:p-8 border border-sage-100/50 shadow-sm mb-8">
                 <p className="text-sage-700 leading-relaxed text-sm mb-4">
-                  Nama <strong>"Kakaskasen"</strong> berasal dari bahasa Tombulu yang berarti kawasan yang subur dan makmur. Seiring dengan perkembangan penduduk dan kebutuhan akan peningkatan pelayanan publik, wilayah Kakaskasen yang awalnya merupakan satu kesatuan akhirnya mengalami pemekaran.
+                  Nama <strong>"Kakaskasen"</strong> berakar dari tradisi lisan Minahasa kuno mengenai kisah "Kinaskas" yang berarti digaruk, merujuk pada cerita rakyat tentang penemuan mata air legendaris di tengah hutan. Seiring dengan perkembangan zaman dari masa aliansi Walak Toumbulu di abad ke-17 hingga pertumbuhan penduduk yang pesat, wilayah Kakaskasen yang awalnya merupakan satu kesatuan akhirnya mengalami pemekaran.
                 </p>
                 <p className="text-sage-700 leading-relaxed text-sm">
                   Pada tanggal 14 Februari 1978, kawasan ini resmi dimekarkan menjadi empat kelurahan yang berdiri sendiri, yaitu Kakaskasen, Kakaskasen Satu, Kakaskasen Dua, dan Kakaskasen Tiga. Pemekaran ini bertujuan untuk mengoptimalkan efektivitas pemerintahan dan mempercepat pembangunan di Kelurahan Kakaskasen Dua.
