@@ -12,7 +12,7 @@ import {
   ExternalLink,
 } from 'lucide-react';
 
-const WHATSAPP_NUMBER = '12345';
+const WHATSAPP_NUMBER = '6282292394628';
 export default function PelaporanPage() {
   const scrollRef = useScrollAnimation();
 
