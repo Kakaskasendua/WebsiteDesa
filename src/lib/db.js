@@ -153,6 +153,9 @@ export async function initDb() {
   // Migrasi kolom keterangan untuk database yang sudah ada
   await sql`ALTER TABLE kepala_lingkungan ADD COLUMN IF NOT EXISTS keterangan VARCHAR(200) DEFAULT ''`;
 
+  // Migrasi kolom wakil kepala lingkungan
+  await sql`ALTER TABLE kepala_lingkungan ADD COLUMN IF NOT EXISTS wakil VARCHAR(100) DEFAULT ''`;
+
   // Seed data lingkungan 1-13 jika belum ada
   const klCount = await sql`SELECT COUNT(*) FROM kepala_lingkungan`;
   if (parseInt(klCount[0].count) === 0) {

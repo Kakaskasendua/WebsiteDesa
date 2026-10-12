@@ -1,4 +1,4 @@
-﻿import { NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { getDb, initDb } from '@/lib/db';
 import { getSession } from '@/lib/auth';
 
@@ -10,14 +10,14 @@ export async function PUT(request, { params }) {
     }
 
     const { id } = await params;
-    const { nama, keterangan } = await request.json();
+    const { nama, keterangan, wakil } = await request.json();
 
     await initDb();
     const sql = getDb();
 
     const result = await sql`
       UPDATE kepala_lingkungan
-      SET nama = ${nama || ''}, keterangan = ${keterangan || ''}, updated_at = NOW()
+      SET nama = ${nama || ''}, keterangan = ${keterangan || ''}, wakil = ${wakil || ''}, updated_at = NOW()
       WHERE id = ${id}
       RETURNING *
     `;
