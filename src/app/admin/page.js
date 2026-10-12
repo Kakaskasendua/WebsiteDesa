@@ -23,6 +23,10 @@ import {
   Link as LinkIcon,
   Paperclip,
   MapPin,
+  Layers,
+  UploadCloud,
+  ExternalLink,
+  RefreshCw,
 } from 'lucide-react';
 
 const statusColors = {
@@ -81,6 +85,12 @@ export default function AdminPage() {
   const [formKL, setFormKL] = useState({ id: null, nomor_lingkungan: '', nama: '', keterangan: '', wakil: '' });
   const [savingKL, setSavingKL] = useState(false);
 
+  // Bagan Struktur Kelurahan state
+  const [baganUrl, setBaganUrl] = useState('/struktur-kelurahan.png');
+  const [tempBaganUrl, setTempBaganUrl] = useState('/struktur-kelurahan.png');
+  const [savingBagan, setSavingBagan] = useState(false);
+  const [uploadingBagan, setUploadingBagan] = useState(false);
+
   // Toast
   const [toast, setToast] = useState(null);
 
@@ -133,13 +143,27 @@ export default function AdminPage() {
     setLoadingKL(false);
   }, []);
 
+  const fetchPengaturan = useCallback(async () => {
+    try {
+      const res = await fetch('/api/pengaturan');
+      const data = await res.json();
+      if (data?.bagan_struktur_url) {
+        setBaganUrl(data.bagan_struktur_url);
+        setTempBaganUrl(data.bagan_struktur_url);
+      }
+    } catch {
+      // fallback
+    }
+  }, []);
+
   useEffect(() => {
     if (user) {
       fetchPengumuman();
       fetchGaleri();
       fetchKL();
+      fetchPengaturan();
     }
-  }, [user, fetchPengumuman, fetchGaleri, fetchKL]);
+  }, [user, fetchPengumuman, fetchGaleri, fetchKL, fetchPengaturan]);
 
   const handleFileUpload = async (e, setForm, field, setFileNameField = null) => {
     const file = e.target.files[0];
@@ -312,6 +336,54 @@ export default function AdminPage() {
     setSavingKL(false);
   };
 
+  // Bagan Struktur Kelurahan Save & Upload
+  const handleSaveBagan = async (e) => {
+    if (e) e.preventDefault();
+    setSavingBagan(true);
+    try {
+      const res = await fetch('/api/pengaturan', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ kunci: 'bagan_struktur_url', nilai: tempBaganUrl }),
+      });
+      if (!res.ok) throw new Error();
+      setBaganUrl(tempBaganUrl);
+      showToast('success', 'Gambar bagan struktur berhasil diperbarui');
+    } catch {
+      showToast('error', 'Gagal menyimpan bagan struktur');
+    }
+    setSavingBagan(false);
+  };
+
+  const handleBaganUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (file.size > 4 * 1024 * 1024) {
+      showToast('error', 'Ukuran file terlalu besar. Maksimal 4MB.');
+      return;
+    }
+
+    setUploadingBagan(true);
+    try {
+      showToast('info', 'Mengunggah gambar bagan struktur...');
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      setTempBaganUrl(data.url);
+      showToast('success', 'Gambar berhasil diunggah! Klik Simpan Perubahan untuk mengaktifkan.');
+    } catch {
+      showToast('error', 'Gagal mengunggah file gambar');
+    }
+    setUploadingBagan(false);
+  };
 
   if (authLoading || !user) {
     return (
@@ -379,7 +451,29 @@ export default function AdminPage() {
             </div>
             <p className="text-2xl font-bold text-sage-900">{galeriList.length}</p>
           </div>
-
+          <div
+            onClick={() => setTab('kepala-lingkungan')}
+            className="bg-white rounded-xl p-4 border border-sage-100/50 shadow-sm cursor-pointer hover:border-sage-300 transition-colors"
+          >
+            <div className="flex items-center gap-2 mb-2">
+              <MapPin className="w-4 h-4 text-sage-400" />
+              <span className="text-sage-500 text-xs font-medium">Kepala Lingkungan</span>
+            </div>
+            <p className="text-2xl font-bold text-sage-900">13 <span className="text-xs font-normal text-sage-500">Lingkungan</span></p>
+          </div>
+          <div
+            onClick={() => setTab('bagan-struktur')}
+            className="bg-white rounded-xl p-4 border border-sage-100/50 shadow-sm cursor-pointer hover:border-sage-300 transition-colors"
+          >
+            <div className="flex items-center gap-2 mb-2">
+              <Layers className="w-4 h-4 text-sage-400" />
+              <span className="text-sage-500 text-xs font-medium">Bagan Struktur</span>
+            </div>
+            <p className="text-lg font-bold text-sage-900 flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block animate-pulse"></span>
+              Gambar Bagan
+            </p>
+          </div>
         </div>
 
         {/* Tabs */}
@@ -416,7 +510,19 @@ export default function AdminPage() {
             }`}
           >
             <MapPin className="w-4 h-4" />
-            Kepala Lingkungan
+            Kepala & Wakil Lingkungan
+          </button>
+
+          <button
+            onClick={() => setTab('bagan-struktur')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
+              tab === 'bagan-struktur'
+                ? 'bg-sage-500 text-white'
+                : 'text-sage-600 hover:bg-sage-50'
+            }`}
+          >
+            <Layers className="w-4 h-4" />
+            Bagan Struktur Kelurahan
           </button>
         </div>
 
@@ -858,10 +964,15 @@ export default function AdminPage() {
         {tab === 'kepala-lingkungan' && (
           <div className="animate-in bg-white rounded-2xl shadow-sm border border-sage-100 overflow-hidden">
             <div className="p-6 border-b border-sage-100 flex items-center justify-between bg-sage-50/50">
-              <h2 className="font-[family-name:var(--font-heading)] text-xl font-bold text-sage-900 flex items-center gap-2">
-                <MapPin className="w-5 h-5 text-sage-500" />
-                Kepala Lingkungan (1-13)
-              </h2>
+              <div>
+                <h2 className="font-[family-name:var(--font-heading)] text-xl font-bold text-sage-900 flex items-center gap-2">
+                  <MapPin className="w-5 h-5 text-sage-500" />
+                  Kepala & Wakil Kepala Lingkungan (1-13)
+                </h2>
+                <p className="text-xs text-sage-500 mt-1">
+                  Kelola nama Kepala Lingkungan dan Wakil Kepala Lingkungan untuk masing-masing wilayah 1 sampai 13.
+                </p>
+              </div>
             </div>
             
             {loadingKL ? (
@@ -878,7 +989,7 @@ export default function AdminPage() {
                       <th className="px-6 py-4 font-semibold">Kepala Lingkungan</th>
                       <th className="px-6 py-4 font-semibold">Wakil Kepala Lingkungan</th>
                       <th className="px-6 py-4 font-semibold">Keterangan</th>
-                      <th className="px-6 py-4 font-semibold w-24 text-center">Aksi</th>
+                      <th className="px-6 py-4 font-semibold w-28 text-center">Aksi</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-sage-100/50">
@@ -894,16 +1005,20 @@ export default function AdminPage() {
                         </td>
                         <td className="px-6 py-4">
                           {item.nama ? (
-                            <p className="text-sm text-sage-600">{item.nama}</p>
+                            <p className="text-sm font-medium text-sage-800">{item.nama}</p>
                           ) : (
-                            <p className="text-sm text-sage-400 italic">Belum diisi</p>
+                            <span className="inline-block px-2 py-0.5 rounded text-xs bg-sage-100 text-sage-500 italic">
+                              Belum diisi
+                            </span>
                           )}
                         </td>
                         <td className="px-6 py-4">
                           {item.wakil ? (
-                            <p className="text-sm text-sage-600">{item.wakil}</p>
+                            <p className="text-sm font-medium text-sage-800">{item.wakil}</p>
                           ) : (
-                            <p className="text-sm text-sage-400 italic">Belum diisi</p>
+                            <span className="inline-block px-2 py-0.5 rounded text-xs bg-sage-100 text-sage-500 italic">
+                              Belum diisi
+                            </span>
                           )}
                         </td>
                         <td className="px-6 py-4 text-sm text-sage-500">
@@ -912,10 +1027,11 @@ export default function AdminPage() {
                         <td className="px-6 py-4 text-center">
                           <button
                             onClick={() => handleEditKL(item)}
-                            className="p-2 text-sage-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
-                            title="Edit"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-sage-700 bg-sage-100 hover:bg-sage-200 hover:text-sage-900 rounded-lg transition-colors cursor-pointer"
+                            title="Edit Kepala & Wakil Lingkungan"
                           >
-                            <Edit3 className="w-4 h-4" />
+                            <Edit3 className="w-3.5 h-3.5" />
+                            Edit
                           </button>
                         </td>
                       </tr>
@@ -924,6 +1040,140 @@ export default function AdminPage() {
                 </table>
               </div>
             )}
+          </div>
+        )}
+
+        {/* ─── BAGAN STRUKTUR TAB ─── */}
+        {tab === 'bagan-struktur' && (
+          <div className="animate-in bg-white rounded-2xl shadow-sm border border-sage-100 overflow-hidden">
+            <div className="p-6 border-b border-sage-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-sage-50/50">
+              <div>
+                <h2 className="font-[family-name:var(--font-heading)] text-xl font-bold text-sage-900 flex items-center gap-2">
+                  <Layers className="w-5 h-5 text-sage-500" />
+                  Bagan Struktur Organisasi Kelurahan
+                </h2>
+                <p className="text-xs text-sage-500 mt-1">
+                  Struktur perangkat kelurahan ditampilkan sebagai gambar bagan resmi (statis). Anda dapat melihat dan mengganti gambar bagan di bawah ini.
+                </p>
+              </div>
+              <a
+                href="/struktur"
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium text-sage-700 bg-white hover:bg-sage-100 border border-sage-200 rounded-xl transition-colors cursor-pointer w-fit shadow-sm"
+              >
+                <span>Lihat di Website</span>
+                <ExternalLink className="w-3.5 h-3.5" />
+              </a>
+            </div>
+
+            <div className="p-6 grid grid-cols-1 lg:grid-cols-12 gap-8">
+              {/* Preview Gambar */}
+              <div className="lg:col-span-7 flex flex-col">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-sage-500">
+                    Preview Bagan Saat Ini
+                  </span>
+                  <span className="text-xs bg-emerald-100 text-emerald-800 px-2.5 py-0.5 rounded-full font-medium">
+                    Aktif di Website
+                  </span>
+                </div>
+                <div className="bg-sage-50 rounded-2xl border border-sage-200/80 p-4 flex items-center justify-center min-h-[320px] max-h-[500px] overflow-hidden">
+                  <img
+                    src={tempBaganUrl || '/struktur-kelurahan.png'}
+                    alt="Preview Bagan Struktur"
+                    className="max-h-[460px] w-full object-contain rounded-xl shadow-sm"
+                    onError={(e) => {
+                      e.target.src = '/struktur-kelurahan.png';
+                    }}
+                  />
+                </div>
+                <p className="text-[11px] text-sage-400 mt-2 text-center">
+                  * Bagan ini otomatis tampil di halaman publik Struktur Organisasi (/struktur)
+                </p>
+              </div>
+
+              {/* Form Upload & Ganti Gambar */}
+              <div className="lg:col-span-5 flex flex-col justify-between space-y-6">
+                <div className="space-y-5">
+                  <div className="bg-sage-50/70 p-4 rounded-xl border border-sage-100">
+                    <h4 className="text-sm font-semibold text-sage-900 mb-1 flex items-center gap-1.5">
+                      <UploadCloud className="w-4 h-4 text-sage-600" />
+                      Unggah File Gambar Baru
+                    </h4>
+                    <p className="text-xs text-sage-500 mb-3">
+                      Pilih file bagan baru dari komputer/HP (PNG, JPG, WEBP). Maksimal 4MB.
+                    </p>
+                    <label className="flex flex-col items-center justify-center border-2 border-dashed border-sage-300 hover:border-sage-500 rounded-xl p-5 text-center cursor-pointer transition-colors bg-white">
+                      <UploadCloud className="w-8 h-8 text-sage-400 mb-2" />
+                      <span className="text-xs font-medium text-sage-700">
+                        {uploadingBagan ? 'Sedang mengunggah...' : 'Klik untuk memilih file gambar bagan'}
+                      </span>
+                      <span className="text-[10px] text-sage-400 mt-1">
+                        Format disarankan: gambar lanskap (16:9 atau 4:3)
+                      </span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handleBaganUpload}
+                        disabled={uploadingBagan}
+                      />
+                    </label>
+                  </div>
+
+                  <div>
+                    <label className="block text-sage-700 text-xs font-medium mb-1.5">
+                      Atau Masukkan URL Gambar (Opsional)
+                    </label>
+                    <input
+                      type="text"
+                      value={tempBaganUrl}
+                      onChange={(e) => setTempBaganUrl(e.target.value)}
+                      className="form-input text-xs"
+                      placeholder="https://... atau /struktur-kelurahan.png"
+                    />
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setTempBaganUrl('/struktur-kelurahan.png')}
+                      className="inline-flex items-center gap-1.5 text-xs text-sage-600 hover:text-sage-900 px-3 py-1.5 rounded-lg border border-sage-200 hover:bg-sage-100/60 transition-colors cursor-pointer"
+                    >
+                      <RefreshCw className="w-3.5 h-3.5" />
+                      Reset ke Gambar Default
+                    </button>
+                  </div>
+                </div>
+
+                <div className="pt-4 border-t border-sage-100 flex items-center justify-end gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setTempBaganUrl(baganUrl)}
+                    className="btn-secondary px-4 py-2 text-xs cursor-pointer"
+                    disabled={savingBagan}
+                  >
+                    Batal
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSaveBagan}
+                    disabled={savingBagan || uploadingBagan}
+                    className="btn-primary px-5 py-2 text-xs flex items-center justify-center gap-1.5 cursor-pointer min-w-[120px]"
+                  >
+                    {savingBagan ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin text-white" />
+                        <span>Menyimpan...</span>
+                      </>
+                    ) : (
+                      <span>Simpan Perubahan</span>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         )}
       </div>
@@ -939,7 +1189,7 @@ export default function AdminPage() {
               <X className="w-5 h-5" />
             </button>
             <h3 className="font-[family-name:var(--font-heading)] text-xl font-bold text-sage-900 mb-1">
-              Edit Kepala Lingkungan {formKL.nomor_lingkungan}
+              Edit Kepala & Wakil Lingkungan {formKL.nomor_lingkungan}
             </h3>
             <p className="text-sage-500 text-sm mb-6">Lingkungan {formKL.nomor_lingkungan}</p>
             

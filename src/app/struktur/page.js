@@ -46,10 +46,18 @@ function KepalaLingkunganCard({ nomor_lingkungan, nama, wakil, keterangan }) {
 
 export default function StrukturPage() {
   const scrollRef = useScrollAnimation();
+  const [baganUrl, setBaganUrl] = useState('/struktur-kelurahan.png');
   const [klList, setKlList] = useState([]);
   const [loadingKL, setLoadingKL] = useState(true);
 
   useEffect(() => {
+    fetch('/api/pengaturan')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.bagan_struktur_url) setBaganUrl(data.bagan_struktur_url);
+      })
+      .catch(() => {});
+
     fetch('/api/kepala-lingkungan')
       .then((res) => res.json())
       .then((kl) => setKlList(Array.isArray(kl) ? kl : []))
@@ -101,14 +109,11 @@ export default function StrukturPage() {
           </div>
 
           <div className="bg-white rounded-2xl border border-sage-100 shadow-sm p-4 md:p-8 animate-in">
-            <div className="relative w-full aspect-[4/3] md:aspect-[16/10]">
-              <Image
-                src="/struktur-kelurahan.png"
+            <div className="relative w-full aspect-[4/3] md:aspect-[16/10] flex items-center justify-center">
+              <img
+                src={baganUrl || '/struktur-kelurahan.png'}
                 alt="Bagan Struktur Organisasi Kelurahan Kakaskasen Dua"
-                fill
-                className="object-contain rounded-xl"
-                priority
-                sizes="(max-width: 768px) 100vw, 900px"
+                className="w-full h-full object-contain rounded-xl"
               />
             </div>
           </div>

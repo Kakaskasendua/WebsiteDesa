@@ -168,5 +168,21 @@ export async function initDb() {
     }
   }
 
+  // ── Pengaturan Website (Settings) ───────────────────────────────────────
+  await sql`
+    CREATE TABLE IF NOT EXISTS pengaturan (
+      kunci VARCHAR(50) PRIMARY KEY,
+      nilai TEXT NOT NULL,
+      updated_at TIMESTAMPTZ DEFAULT NOW()
+    )
+  `;
+
+  await sql`
+    INSERT INTO pengaturan (kunci, nilai)
+    VALUES ('bagan_struktur_url', '/struktur-kelurahan.png')
+    ON CONFLICT (kunci) DO NOTHING
+  `;
+
   return true;
 }
+
