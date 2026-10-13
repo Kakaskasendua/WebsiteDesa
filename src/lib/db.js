@@ -183,6 +183,24 @@ export async function initDb() {
     ON CONFLICT (kunci) DO NOTHING
   `;
 
+  await sql`
+    INSERT INTO pengaturan (kunci, nilai)
+    VALUES (
+      'profil_data',
+      ${JSON.stringify({
+        penduduk: { total: 4409, lakiLaki: 2204, perempuan: 2205 },
+        saranaPrasarana: [
+          { nama: 'Kantor Kelurahan', jumlah: 1, satuan: 'unit' },
+          { nama: 'Gereja', jumlah: 4, satuan: 'unit' },
+          { nama: 'Masjid', jumlah: 1, satuan: 'unit' },
+          { nama: 'Sekolah', jumlah: 5, satuan: 'unit' },
+          { nama: 'Posyandu', jumlah: 6, satuan: 'unit' },
+          { nama: 'Lapangan Olahraga', jumlah: 3, satuan: 'unit' },
+        ],
+      })}
+    )
+    ON CONFLICT (kunci) DO NOTHING
+  `;
+
   return true;
 }
-

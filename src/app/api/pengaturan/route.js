@@ -1,13 +1,23 @@
 import { NextResponse } from 'next/server';
-import { getDb, initDb } from '@/lib/db';
+import { getDb } from '@/lib/db';
 import { getSession } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
+async function ensureSettingsTable(sql) {
+  await sql`
+    CREATE TABLE IF NOT EXISTS pengaturan (
+      kunci VARCHAR(50) PRIMARY KEY,
+      nilai TEXT NOT NULL,
+      updated_at TIMESTAMPTZ DEFAULT NOW()
+    )
+  `;
+}
+
 export async function GET() {
   try {
-    await initDb();
     const sql = getDb();
+    await ensureSettingsTable(sql);
     const rows = await sql`SELECT kunci, nilai FROM pengaturan`;
     const settings = {};
     for (const row of rows) {
@@ -32,8 +42,8 @@ export async function PUT(request) {
       return NextResponse.json({ error: 'Data tidak lengkap' }, { status: 400 });
     }
 
-    await initDb();
     const sql = getDb();
+    await ensureSettingsTable(sql);
 
     await sql`
       INSERT INTO pengaturan (kunci, nilai, updated_at)

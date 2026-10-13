@@ -27,6 +27,8 @@ import {
   UploadCloud,
   ExternalLink,
   RefreshCw,
+  Users,
+  Save,
 } from 'lucide-react';
 
 const statusColors = {
@@ -91,6 +93,20 @@ export default function AdminPage() {
   const [savingBagan, setSavingBagan] = useState(false);
   const [uploadingBagan, setUploadingBagan] = useState(false);
 
+  // Data profil state
+  const [profilData, setProfilData] = useState({
+    penduduk: { total: 4409, lakiLaki: 2204, perempuan: 2205 },
+    saranaPrasarana: [
+      { nama: 'Kantor Kelurahan', jumlah: 1, satuan: 'unit' },
+      { nama: 'Gereja', jumlah: 4, satuan: 'unit' },
+      { nama: 'Masjid', jumlah: 1, satuan: 'unit' },
+      { nama: 'Sekolah', jumlah: 5, satuan: 'unit' },
+      { nama: 'Posyandu', jumlah: 6, satuan: 'unit' },
+      { nama: 'Lapangan Olahraga', jumlah: 3, satuan: 'unit' },
+    ],
+  });
+  const [savingProfil, setSavingProfil] = useState(false);
+
   // Toast
   const [toast, setToast] = useState(null);
 
@@ -150,6 +166,19 @@ export default function AdminPage() {
       if (data?.bagan_struktur_url) {
         setBaganUrl(data.bagan_struktur_url);
         setTempBaganUrl(data.bagan_struktur_url);
+      }
+      if (data?.profil_data) {
+        const savedData = JSON.parse(data.profil_data);
+        setProfilData({
+          penduduk: {
+            total: Number(savedData?.penduduk?.total) || 0,
+            lakiLaki: Number(savedData?.penduduk?.lakiLaki) || 0,
+            perempuan: Number(savedData?.penduduk?.perempuan) || 0,
+          },
+          saranaPrasarana: Array.isArray(savedData.saranaPrasarana)
+            ? savedData.saranaPrasarana
+            : [],
+        });
       }
     } catch {
       // fallback
@@ -385,6 +414,56 @@ export default function AdminPage() {
     setUploadingBagan(false);
   };
 
+  const handleSaveProfil = async (e) => {
+    e.preventDefault();
+    setSavingProfil(true);
+    try {
+      const res = await fetch('/api/pengaturan', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ kunci: 'profil_data', nilai: JSON.stringify(profilData) }),
+      });
+      if (!res.ok) throw new Error();
+      showToast('success', 'Data profil berhasil diperbarui');
+    } catch {
+      showToast('error', 'Gagal menyimpan data profil');
+    }
+    setSavingProfil(false);
+  };
+
+  const updatePenduduk = (field, value) => {
+    setProfilData((current) => ({
+      ...current,
+      penduduk: { ...current.penduduk, [field]: value },
+    }));
+  };
+
+  const updateSarana = (index, field, value) => {
+    setProfilData((current) => ({
+      ...current,
+      saranaPrasarana: current.saranaPrasarana.map((item, itemIndex) =>
+        itemIndex === index ? { ...item, [field]: value } : item
+      ),
+    }));
+  };
+
+  const addSarana = () => {
+    setProfilData((current) => ({
+      ...current,
+      saranaPrasarana: [
+        ...current.saranaPrasarana,
+        { nama: '', jumlah: 0, satuan: 'unit' },
+      ],
+    }));
+  };
+
+  const removeSarana = (index) => {
+    setProfilData((current) => ({
+      ...current,
+      saranaPrasarana: current.saranaPrasarana.filter((_, itemIndex) => itemIndex !== index),
+    }));
+  };
+
   if (authLoading || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center pt-20">
@@ -499,6 +578,18 @@ export default function AdminPage() {
           >
             <ImageIcon className="w-4 h-4" />
             Galeri
+          </button>
+
+          <button
+            onClick={() => setTab('profil-data')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
+              tab === 'profil-data'
+                ? 'bg-sage-500 text-white'
+                : 'text-sage-600 hover:bg-sage-50'
+            }`}
+          >
+            <Users className="w-4 h-4" />
+            Data Profil
           </button>
 
           <button
@@ -955,6 +1046,129 @@ export default function AdminPage() {
                 ))}
               </div>
             )}
+          </div>
+        )}
+
+        {/* ─── PROFIL DATA TAB ─── */}
+        {tab === 'profil-data' && (
+          <div className="animate-in bg-white rounded-2xl shadow-sm border border-sage-100 overflow-hidden">
+            <div className="p-6 border-b border-sage-100 bg-sage-50/50">
+              <h2 className="font-[family-name:var(--font-heading)] text-xl font-bold text-sage-900 flex items-center gap-2">
+                <Users className="w-5 h-5 text-sage-500" />
+                Data Penduduk & Sarana Prasarana
+              </h2>
+              <p className="text-xs text-sage-500 mt-1">
+                Data ini ditampilkan pada halaman Profil Kelurahan dan dapat diperbarui kapan saja.
+              </p>
+            </div>
+
+            <form onSubmit={handleSaveProfil} className="p-6 space-y-8">
+              <section>
+                <h3 className="font-semibold text-sage-900 mb-4">Data Penduduk</h3>
+                <div className="grid sm:grid-cols-3 gap-4">
+                  {[
+                    ['total', 'Jumlah Penduduk', 'jiwa'],
+                    ['lakiLaki', 'Laki-laki', 'jiwa'],
+                    ['perempuan', 'Perempuan', 'jiwa'],
+                  ].map(([field, label, unit]) => (
+                    <div key={field}>
+                      <label className="block text-sage-700 text-sm font-medium mb-1.5">{label}</label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="number"
+                          min="0"
+                          value={profilData.penduduk[field]}
+                          onChange={(e) => updatePenduduk(field, e.target.value)}
+                          className="form-input"
+                          required
+                        />
+                        <span className="text-sage-500 text-sm">{unit}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+
+              <section>
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h3 className="font-semibold text-sage-900">Sarana & Prasarana</h3>
+                    <p className="text-xs text-sage-500 mt-1">Tambahkan, ubah, atau hapus fasilitas yang tampil di halaman profil.</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={addSarana}
+                    className="btn-secondary px-3 py-2 text-xs flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    Tambah Data
+                  </button>
+                </div>
+                <div className="space-y-3">
+                  {profilData.saranaPrasarana.map((item, index) => (
+                    <div key={index} className="grid sm:grid-cols-[1fr_140px_120px_auto] gap-3 items-end p-3 rounded-xl bg-sage-50 border border-sage-100">
+                      <div>
+                        <label className="block text-sage-600 text-xs font-medium mb-1">Nama fasilitas</label>
+                        <input
+                          type="text"
+                          value={item.nama}
+                          onChange={(e) => updateSarana(index, 'nama', e.target.value)}
+                          className="form-input"
+                          placeholder="Contoh: Posyandu"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sage-600 text-xs font-medium mb-1">Jumlah</label>
+                        <input
+                          type="number"
+                          min="0"
+                          value={item.jumlah}
+                          onChange={(e) => updateSarana(index, 'jumlah', e.target.value)}
+                          className="form-input"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sage-600 text-xs font-medium mb-1">Satuan</label>
+                        <input
+                          type="text"
+                          value={item.satuan}
+                          onChange={(e) => updateSarana(index, 'satuan', e.target.value)}
+                          className="form-input"
+                          placeholder="unit"
+                          required
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removeSarana(index)}
+                        className="p-2.5 text-sage-400 hover:text-red-600 hover:bg-red-50 rounded-lg cursor-pointer"
+                        title="Hapus data"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                  {profilData.saranaPrasarana.length === 0 && (
+                    <p className="text-sm text-sage-500 py-4 text-center border border-dashed border-sage-200 rounded-xl">
+                      Belum ada data sarana prasarana.
+                    </p>
+                  )}
+                </div>
+              </section>
+
+              <div className="pt-4 border-t border-sage-100 flex justify-end">
+                <button
+                  type="submit"
+                  disabled={savingProfil}
+                  className="btn-primary px-5 py-2.5 text-sm flex items-center gap-2 cursor-pointer disabled:opacity-60"
+                >
+                  {savingProfil ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                  Simpan Data Profil
+                </button>
+              </div>
+            </form>
           </div>
         )}
 

@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import { useEffect, useState } from 'react';
 import useScrollAnimation from '@/hooks/useScrollAnimation';
 import {
   Users,
@@ -10,10 +11,31 @@ import {
   Clock,
   Compass,
   Building2,
+  UserRound,
+  VenusAndMars,
+  School,
 } from 'lucide-react';
+
+const defaultProfilData = {
+  penduduk: { total: 4409, lakiLaki: 2204, perempuan: 2205 },
+  saranaPrasarana: [
+    { nama: 'Kantor Kelurahan', jumlah: 1, satuan: 'unit' },
+    { nama: 'Gereja', jumlah: 4, satuan: 'unit' },
+    { nama: 'Masjid', jumlah: 1, satuan: 'unit' },
+    { nama: 'Sekolah', jumlah: 5, satuan: 'unit' },
+    { nama: 'Posyandu', jumlah: 6, satuan: 'unit' },
+    { nama: 'Lapangan Olahraga', jumlah: 3, satuan: 'unit' },
+  ],
+};
+
+const emptyProfilData = {
+  penduduk: { total: 0, lakiLaki: 0, perempuan: 0 },
+  saranaPrasarana: [],
+};
 
 export default function ProfilPage() {
   const scrollRef = useScrollAnimation();
+  const [profilData, setProfilData] = useState(null);
 
   const batasWilayah = [
     { arah: 'Utara', wilayah: 'Kakaskasen Satu' },
@@ -21,6 +43,35 @@ export default function ProfilPage() {
     { arah: 'Selatan', wilayah: 'Kakaskasen Tiga' },
     { arah: 'Barat', wilayah: 'Gunung Lokon' },
   ];
+
+  useEffect(() => {
+    const loadProfilData = async () => {
+      try {
+        const response = await fetch('/api/pengaturan');
+        if (!response.ok) throw new Error('Gagal memuat data profil');
+        const settings = await response.json();
+        if (settings.profil_data) {
+          const savedData = JSON.parse(settings.profil_data);
+          setProfilData({
+            penduduk: { ...defaultProfilData.penduduk, ...savedData.penduduk },
+            saranaPrasarana: Array.isArray(savedData.saranaPrasarana)
+              ? savedData.saranaPrasarana
+              : [],
+          });
+        } else {
+          setProfilData(emptyProfilData);
+        }
+      } catch (error) {
+        console.error('Load profil data error:', error);
+        setProfilData(emptyProfilData);
+      }
+    };
+
+    loadProfilData();
+  }, []);
+
+  const formatNumber = (value) => Number(value || 0).toLocaleString('id-ID');
+  const displayData = profilData || emptyProfilData;
 
   return (
     <div ref={scrollRef}>
@@ -103,7 +154,7 @@ export default function ProfilPage() {
               {/* Narasi Sejarah */}
               <div className="bg-white rounded-2xl p-6 md:p-8 border border-sage-100/50 shadow-sm mb-8">
                 <p className="text-sage-700 leading-relaxed text-sm mb-4">
-                  Nama <strong>"Kakaskasen"</strong> berakar dari tradisi lisan Minahasa kuno mengenai kisah "Kinaskas" yang berarti digaruk, merujuk pada cerita rakyat tentang penemuan mata air legendaris di tengah hutan. Seiring dengan perkembangan zaman dari masa aliansi Walak Toumbulu di abad ke-17 hingga pertumbuhan penduduk yang pesat, wilayah Kakaskasen yang awalnya merupakan satu kesatuan akhirnya mengalami pemekaran.
+                  Nama <strong>&quot;Kakaskasen&quot;</strong> berakar dari tradisi lisan Minahasa kuno mengenai kisah &quot;Kinaskas&quot; yang berarti digaruk, merujuk pada cerita rakyat tentang penemuan mata air legendaris di tengah hutan. Seiring dengan perkembangan zaman dari masa aliansi Walak Toumbulu di abad ke-17 hingga pertumbuhan penduduk yang pesat, wilayah Kakaskasen yang awalnya merupakan satu kesatuan akhirnya mengalami pemekaran.
                 </p>
                 <p className="text-sage-700 leading-relaxed text-sm">
                   Pada tanggal 14 Februari 1978, kawasan ini resmi dimekarkan menjadi empat kelurahan yang berdiri sendiri, yaitu Kakaskasen, Kakaskasen Satu, Kakaskasen Dua, dan Kakaskasen Tiga. Pemekaran ini bertujuan untuk mengoptimalkan efektivitas pemerintahan dan mempercepat pembangunan di Kelurahan Kakaskasen Dua.
@@ -171,7 +222,7 @@ export default function ProfilPage() {
 
           <div className="grid sm:grid-cols-3 gap-5 max-w-4xl mx-auto mb-12">
             {[
-              { icon: Users, label: 'Penduduk', value: '4.409', sub: 'jiwa' },
+              { icon: Users, label: 'Penduduk', value: profilData ? formatNumber(displayData.penduduk.total) : '...', sub: 'jiwa' },
               { icon: MapPin, label: 'Lingkungan', value: '13', sub: 'lingkungan' },
 
               { icon: Trophy, label: 'Prestasi', value: 'Top 75', sub: 'ADWI 2023' },
@@ -190,6 +241,56 @@ export default function ProfilPage() {
                 <p className="text-sage-500 text-xs mt-0.5">{item.sub}</p>
               </div>
             ))}
+          </div>
+
+          {/* Data Penduduk */}
+          <div className="grid md:grid-cols-2 gap-5 mb-12">
+            <div className="bg-sage-50 rounded-xl p-6 border border-sage-100/50 fade-up">
+              <div className="flex items-center gap-2 mb-5">
+                <Users className="w-5 h-5 text-sage-500" />
+                <h3 className="font-semibold text-sage-900">Data Penduduk</h3>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-white rounded-xl p-4 border border-sage-100/50">
+                  <UserRound className="w-5 h-5 text-sage-400 mb-3" />
+                  <p className="text-sage-500 text-xs">Laki-laki</p>
+                  <p className="text-2xl font-bold text-sage-900 mt-1">
+                    {profilData ? formatNumber(displayData.penduduk.lakiLaki) : '...'}
+                  </p>
+                  <p className="text-sage-500 text-xs mt-0.5">jiwa</p>
+                </div>
+                <div className="bg-white rounded-xl p-4 border border-sage-100/50">
+                  <VenusAndMars className="w-5 h-5 text-sage-400 mb-3" />
+                  <p className="text-sage-500 text-xs">Perempuan</p>
+                  <p className="text-2xl font-bold text-sage-900 mt-1">
+                    {profilData ? formatNumber(displayData.penduduk.perempuan) : '...'}
+                  </p>
+                  <p className="text-sage-500 text-xs mt-0.5">jiwa</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Sarana & Prasarana */}
+            <div className="bg-sage-50 rounded-xl p-6 border border-sage-100/50 fade-up">
+              <div className="flex items-center gap-2 mb-5">
+                <School className="w-5 h-5 text-sage-500" />
+                <h3 className="font-semibold text-sage-900">Sarana & Prasarana</h3>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                {displayData.saranaPrasarana.map((item) => (
+                  <div key={`${item.nama}-${item.satuan}`} className="bg-white rounded-lg px-4 py-3 border border-sage-100/50">
+                    <p className="text-sage-600 text-xs leading-snug">{item.nama}</p>
+                    <p className="text-sage-900 text-xl font-bold mt-1">
+                      {formatNumber(item.jumlah)}
+                      <span className="text-sage-500 text-xs font-normal ml-1">{item.satuan}</span>
+                    </p>
+                  </div>
+                ))}
+              </div>
+              {profilData && displayData.saranaPrasarana.length === 0 && (
+                <p className="text-sage-500 text-sm">Data sarana dan prasarana belum tersedia.</p>
+              )}
+            </div>
           </div>
 
           {/* Batas Wilayah */}
